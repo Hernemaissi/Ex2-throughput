@@ -21,9 +21,14 @@
 #include <netdb.h>
 
 #define SERVERPORT "4950"    // the port users will be connecting to
+#define PAYLOAD 1024
 
 int main(int argc, char *argv[])
 {
+	if (argc != 2) {
+		printf("Wrong number of arguments");
+		exit(-1);
+	}
     int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -34,7 +39,7 @@ int main(int argc, char *argv[])
 	FILE *file;
 	size_t result;
 
-	file = fopen("cat.jpg", "rb");
+	file = fopen("time_results_micro.txt", "rb");
 	if (file == NULL) {
 		printf("error opening file");
 		exit(-1);
@@ -62,7 +67,7 @@ int main(int argc, char *argv[])
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
-	if ((rv = getaddrinfo("127.0.0.1", SERVERPORT, &hints, &servinfo)) != 0) {
+	if ((rv = getaddrinfo(argv[1], SERVERPORT, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
 	}
@@ -86,11 +91,17 @@ int main(int argc, char *argv[])
     freeaddrinfo(servinfo);
 
     int total_written = 0;
+    int msg_length = 0;
         while (1) {
 
             void *t = buffer;
             while (total_written < fileLen) {
-                int bytes_written = sendto(sockfd, t, fileLen - total_written, 0,
+            	if (total_written + PAYLOAD <= fileLen) {
+            		msg_length = PAYLOAD;
+            	} else {
+            		msg_length = fileLen - total_written;
+            	}
+                int bytes_written = sendto(sockfd, t, msg_length, 0,
                         p->ai_addr, p->ai_addrlen);
                 if (bytes_written <= 0) {
                     perror("Send:");
@@ -102,8 +113,9 @@ int main(int argc, char *argv[])
             if (total_written >= fileLen)
             	break;
         }
-
+        sendto(sockfd, buffer, 0, 0,
+                                p->ai_addr, p->ai_addrlen);
         close(sockfd);
-
+        free(buffer);
         return 0;
 }

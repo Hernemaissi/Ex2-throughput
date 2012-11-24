@@ -29,6 +29,10 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
+	if (argc != 2) {
+		printf("Wrong number of arguments\n");
+		exit(-1);
+	}
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
@@ -39,7 +43,7 @@ int main(int argc, char *argv[])
     FILE *file;
     size_t result;
 
-    file = fopen("cat.jpg", "rb");
+    file = fopen("time_results_micro.txt", "rb");
     if (file == NULL) {
     	printf("error opening file");
     	exit(-1);
@@ -62,7 +66,7 @@ int main(int argc, char *argv[])
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((rv = getaddrinfo(IP, PORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -113,6 +117,6 @@ int main(int argc, char *argv[])
     }
 
     close(sockfd);
-
+    free(buffer);
     return 0;
 }

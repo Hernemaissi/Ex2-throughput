@@ -21,6 +21,8 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/time.h>
+#include <time.h>
 
 #define PORT "3490"  // the port users will be connecting to
 
@@ -56,9 +58,9 @@ int main(void)
     int total_bytes = 0;
     int byte_counter = 0;
     char buffer[1000];
-    time_t start;
-    time_t last_counter;
-    time_t now;
+    struct timeval start;
+    struct timeval last_counter;
+    struct timeval now;
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
@@ -113,6 +115,7 @@ int main(void)
         exit(1);
     }
 
+
     printf("server: waiting for connections...\n");
 
     while(1) {  // main accept() loop
@@ -130,8 +133,8 @@ int main(void)
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
-            time(&start);
-            time(&last_counter);
+            gettimeofday(&start, NULL);
+            gettimeofday(&last_counter, NULL);
             while (read_bytes != 0) {
             	read_bytes = recv(new_fd, buffer, sizeof buffer, 0);
             	total_bytes += read_bytes;
@@ -139,20 +142,28 @@ int main(void)
             	if (byte_counter >= 262144) {
             		byte_counter = 0;
             		//Store the throughput for this 256KB
-            		time(&now);
-            		time_t difference = now - last_counter;
-            		time(&last_counter);
-            		printf("256KB transferred in %i seconds", difference);
+            		gettimeofday(&now, NULL);
+            		int difference = now.tv_sec - last_counter.tv_sec;
+            		int micro_difference = now.tv_usec - last_counter.tv_usec;
+            		gettimeofday(&last_counter, NULL);
+            		printf("Transfer speed: ");
+            		if (difference != 0) {
+            			printf("%i KB/s", (256 / difference));
+            		}else {
+            			float true_micros = micro_difference / 1000000;
+            			printf("%i KB/s", (256 / true_micros));
+            		}
+            		printf("\n");
             	}
+
             }
-            time(&now);
-            time_t total_time = now - start;
-            printf("Transferred %i bytes in %i seconds", total_bytes, total_time);
+            gettimeofday(&now, NULL);
+            int total_time = now.tv_sec - start.tv_sec;
+            printf("Transferred %i bytes in %i seconds\n", total_bytes, total_time);
             close(new_fd);
             exit(0);
         }
         close(new_fd);  // parent doesn't need this
     }
-
     return 0;
 }

@@ -48,9 +48,9 @@ int main(void)
 	int total_bytes = 0;
 	int byte_counter = 0;
 	char buffer[1000];
-	time_t start;
-	time_t last_counter;
-	time_t now;
+	struct timeval start;
+	struct timeval last_counter;
+	struct timeval now;
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
@@ -89,12 +89,12 @@ int main(void)
 	printf("listener: waiting to recvfrom...\n");
 
 	addr_len = sizeof their_addr;
-	time(&start);
-	time(&last_counter);
+	gettimeofday(&start, NULL);
+	gettimeofday(&last_counter, NULL);
 	while (read_bytes != 0) {
 		read_bytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
 		        (struct sockaddr *)&their_addr, &addr_len);
-		if (read_bytes != -1) {
+		if (read_bytes == -1) {
 			perror("Recv: ");
 			exit(-1);
 		}
@@ -103,15 +103,23 @@ int main(void)
 		if (byte_counter >= 262144) {
 			byte_counter = 0;
 			//Store the throughput for this 256KB
-			time(&now);
-			time_t difference = now - last_counter;
-			time(&last_counter);
-			printf("256KB transferred in %u seconds", difference);
+			gettimeofday(&now, NULL);
+			int difference = now.tv_sec - last_counter.tv_sec;
+			int micro_difference = now.tv_usec - last_counter.tv_usec;
+			gettimeofday(&last_counter, NULL);
+			printf("Transfer speed: ");
+			if (difference != 0) {
+				printf("%i KB/s", (256 / difference));
+			} else {
+				float true_micros = micro_difference / 1000000;
+				printf("%i KB/s", (256 / true_micros));
+			}
+			printf("\n");
 		}
 	}
-	time(&now);
-	time_t total_time = now - start;
-	printf("Transferred %u bytes in %u seconds", total_bytes, total_time);
+	gettimeofday(&now, NULL);
+	int total_time = now.tv_sec - start.tv_sec;
+	printf("Transferred %u bytes in %u seconds\n", total_bytes, total_time);
 
 	close(sockfd);
 
