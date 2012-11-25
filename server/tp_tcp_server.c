@@ -150,8 +150,8 @@ int main(void)
             		if (difference != 0) {
             			printf("%i KB/s", (256 / difference));
             		}else {
-            			float true_micros = micro_difference / 1000000;
-            			printf("%i KB/s", (256 / true_micros));
+            			double true_micros = (double)micro_difference / 1000000;
+            			printf("%4.0f KB/s", (256 / true_micros));
             		}
             		printf("\n");
             	}

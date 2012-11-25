@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 {
 	if (argc != 2) {
 		printf("Wrong number of arguments\n");
-		exit(-1);
+		//exit(-1);
 	}
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo("10.212.182.203", PORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
